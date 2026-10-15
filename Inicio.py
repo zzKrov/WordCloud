@@ -7,19 +7,19 @@ import io
 from collections import Counter
 from wordcloud import WordCloud, STOPWORDS
 
-# ─────────────────────────────────────────────
-# CONFIGURACIÓN
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
+# CONFIGURACIÓN GENERAL
+# ---------------------------------------------------------
 st.set_page_config(
-    page_title="Generador de Nube de Palabras",
+    page_title="Generador de Nube de Palabras // Krov Industries",
     page_icon="⚜",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# ─────────────────────────────────────────────
-# ESTILOS NOIR GÓTICOS
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
+# ESTILOS VISUALES EDITORIALES
+# ---------------------------------------------------------
 st.markdown("""
 <style>
     @import url('https://fonts.googleapis.com/css2?family=Spectral:ital,wght@0,300;0,400;0,600;0,700;1,400&family=JetBrains+Mono:wght@400;500;700&display=swap');
@@ -32,6 +32,15 @@ st.markdown("""
 
     [data-testid="stHeader"] {
         background: transparent !important;
+    }
+
+    .brand-signature {
+        font-family: 'JetBrains Mono', monospace;
+        font-size: 0.72rem;
+        letter-spacing: 0.16em;
+        color: #9ca3af;
+        text-transform: uppercase;
+        margin-bottom: 4px;
     }
 
     [data-testid="stSidebar"] {
@@ -124,10 +133,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-
-# ─────────────────────────────────────────────
-# PALABRAS COMUNES Y PALETAS
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
+# PALABRAS COMUNES Y PALETAS DE COLOR
+# ---------------------------------------------------------
 STOPWORDS_ES = {
     "de","la","el","en","y","a","los","del","se","las","un","por","con","no","una","su",
     "para","es","al","lo","como","mas","pero","sus","le","ya","o","este","si","porque",
@@ -207,22 +215,22 @@ def fig_a_bytes(fig):
     buf.seek(0)
     return buf.read()
 
-
-# ─────────────────────────────────────────────
-# PANEL LATERAL
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
+# BARRA LATERAL
+# ---------------------------------------------------------
 with st.sidebar:
-    st.markdown("## Nube de Palabras")
+    st.markdown('<div class="brand-signature">Krov Industries · Análisis Léxico</div>', unsafe_allow_html=True)
+    st.markdown("## Configuración de Texto")
     st.divider()
 
-    st.markdown("### 1. Texto de origen")
-    fuente = st.radio("fuente", ["Escribir / Pegar", "Subir archivo"], label_visibility="collapsed")
+    st.markdown("### 1. Origen del documento")
+    fuente = st.radio("Fuente de entrada:", ["Escribir / Pegar", "Subir archivo"], label_visibility="collapsed")
     texto_input = ""
 
     if fuente == "Escribir / Pegar":
         texto_input = st.text_area("Texto a analizar:", height=170, placeholder="Pega aquí un artículo, opiniones o cualquier documento...")
 
-        with st.expander("Ver textos de ejemplo"):
+        with st.expander("Cargar texto de ejemplo"):
             ejemplos = {
                 "Inteligencia Artificial": """
                 La inteligencia artificial es una rama de la informática que desarrolla sistemas
@@ -244,50 +252,50 @@ with st.sidebar:
                 mientras la computación en la nube asegura la continuidad de las operaciones.
                 """,
             }
-            ejemplo_sel = st.selectbox("Elegir ejemplo:", list(ejemplos.keys()), label_visibility="collapsed")
-            if st.button("Cargar este texto"):
+            ejemplo_sel = st.selectbox("Seleccionar temática:", list(ejemplos.keys()), label_visibility="collapsed")
+            if st.button("Cargar texto seleccionado", use_container_width=True):
                 st.session_state["texto_ejemplo"] = ejemplos[ejemplo_sel]
                 st.rerun()
 
         if "texto_ejemplo" in st.session_state and not texto_input:
             texto_input = st.session_state["texto_ejemplo"]
     else:
-        archivo = st.file_uploader("Archivo de texto:", type=["txt", "csv"], label_visibility="collapsed")
+        archivo = st.file_uploader("Subir archivo de texto:", type=["txt", "csv"], label_visibility="collapsed")
         if archivo:
             if archivo.name.endswith(".txt"):
                 texto_input = archivo.read().decode("utf-8", errors="ignore")
             elif archivo.name.endswith(".csv"):
                 df_csv = pd.read_csv(archivo)
-                col_txt = st.selectbox("Columna con el texto:", df_csv.columns.tolist())
+                col_txt = st.selectbox("Columna que contiene el texto:", df_csv.columns.tolist())
                 texto_input = " ".join(df_csv[col_txt].dropna().astype(str).tolist())
-            st.success(f"Archivo listo: {len(texto_input):,} caracteres.")
+            st.success(f"Archivo preparado: {len(texto_input):,} caracteres.")
 
     st.divider()
-    st.markdown("### 2. Filtros")
+    st.markdown("### 2. Filtros de palabras")
     idioma = st.selectbox("Eliminar palabras comunes:", ["Español", "Inglés", "Ambos", "Ninguno"])
-    min_longitud = st.slider("Letras mínimas por palabra:", 2, 8, 3)
-    palabras_extra = st.text_input("Omitir palabras específicas:", placeholder="ejemplo: además, también")
+    min_longitud = st.slider("Longitud mínima de palabra:", 2, 8, 3)
+    palabras_extra = st.text_input("Excluir palabras puntuales:", placeholder="ejemplo: además, también")
 
     st.divider()
-    st.markdown("### 3. Aspecto visual")
-    paleta_sel = st.selectbox("Gama de color:", list(PALETAS.keys()))
-    fondo_sel = st.radio("Fondo:", ["Negro", "Blanco"], horizontal=True)
+    st.markdown("### 3. Ajuste estético")
+    paleta_sel = st.selectbox("Paleta cromática:", list(PALETAS.keys()))
+    fondo_sel = st.radio("Color de fondo:", ["Negro", "Blanco"], horizontal=True)
     fondo_color = "black" if fondo_sel == "Negro" else "white"
-    forma_sel = st.selectbox("Forma exterior:", list(FORMAS.keys()))
-    max_words = st.slider("Límite de palabras:", 20, 200, 80)
+    forma_sel = st.selectbox("Silueta del contorno:", list(FORMAS.keys()))
+    max_words = st.slider("Cantidad máxima de palabras:", 20, 200, 80)
 
     st.divider()
     generar = st.button("Crear nube de palabras", use_container_width=True)
 
-
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
 # CONTENIDO PRINCIPAL
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
 st.markdown("""
 <div class="header-card">
+    <div class="brand-signature">Krov Industries · Visualización Semántica</div>
     <h1 style="margin:0; font-family:'Spectral'; font-size:1.8rem; color:#ffffff;">Generador de Nube de Palabras</h1>
-    <p style="margin:2px 0 0 0; color:#d4af37 !important; font-family:'JetBrains Mono'; font-size:0.78rem;">
-        Identifica rápidamente los conceptos centrales de cualquier documento
+    <p style="margin:4px 0 0 0; color:#d4af37 !important; font-family:'JetBrains Mono'; font-size:0.78rem;">
+        Identificación visual y frecuencia de conceptos centrales en cualquier texto
     </p>
 </div>
 """, unsafe_allow_html=True)
@@ -296,30 +304,30 @@ if not generar or not texto_input.strip():
     col_izq, col_der = st.columns([3, 2], gap="large")
     with col_izq:
         st.markdown("""
-        ### Cómo funciona
-        Las palabras con mayor frecuencia aparecen con un tamaño de letra más grande.
-        Es una forma visual e intuitiva de entender de qué habla un texto sin leerlo por completo.
+        ### Funcionamiento del análisis
+        Los términos que se repiten con mayor frecuencia dentro del contenido aparecerán con un tamaño de letra proporcionalmente mayor.
+        Permite inspeccionar de forma directa la temática dominante de un texto sin necesidad de recorrerlo en su totalidad.
         """)
-        st.markdown("- **Filtro automático:** Descarta artículos y conectores como *el, de, en, con*.")
-        st.markdown("- **Personalizable:** Cambia la paleta de color, forma y cantidad de palabras.")
-        st.markdown("- **Descargable:** Guarda la imagen en alta definición o la tabla en CSV.")
+        st.markdown("- **Filtrado gramatical:** Descarta de forma automática artículos, preposiciones y conectores.")
+        st.markdown("- **Ajustes personalizados:** Selecciona gamas cromáticas, formas geométricas y umbrales de longitud.")
+        st.markdown("- **Exportación de datos:** Descarga la imagen final en formato PNG o la tabla de frecuencias en CSV.")
     with col_der:
-        st.markdown("### Usos habituales")
-        st.markdown("- Resúmenes de encuestas y opiniones de clientes.")
-        st.markdown("- Análisis de noticias, discursos y artículos.")
-        st.markdown("- Revisión de temáticas clave en tesis o reportes.")
+        st.markdown("### Casos de aplicación práctica")
+        st.markdown("- Procesamiento de respuestas abiertas en encuestas de satisfacción.")
+        st.markdown("- Detección de patrones en artículos periodísticos y discursos.")
+        st.markdown("- Auditoría de palabras clave en documentos de investigación o manuales.")
     st.stop()
 
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
 # PROCESAMIENTO
-# ─────────────────────────────────────────────
+# ---------------------------------------------------------
 stopwords_set = obtener_stopwords(idioma) if idioma != "Ninguno" else set()
 if palabras_extra.strip():
     stopwords_set |= {p.strip().lower() for p in palabras_extra.split(",") if p.strip()}
 
 texto_limpio = limpiar_texto(texto_input, stopwords_set, min_longitud)
 if not texto_limpio.strip():
-    st.error("No quedaron palabras válidas tras aplicar los filtros. Prueba bajando la longitud mínima.")
+    st.error("No se encontraron palabras válidas tras aplicar los filtros. Prueba disminuyendo la longitud mínima por palabra.")
     st.stop()
 
 df_freq = contar_palabras(texto_limpio)
@@ -328,13 +336,13 @@ vocabulario = len(df_freq)
 
 m1, m2, m3, m4 = st.columns(4)
 m1.metric("Palabras procesadas", f"{total_palabras:,}")
-m2.metric("Palabras distintas", f"{vocabulario:,}")
-m3.metric("Palabra principal", df_freq.iloc[0]["Palabra"] if not df_freq.empty else "—")
+m2.metric("Palabras únicas", f"{vocabulario:,}")
+m3.metric("Término más frecuente", df_freq.iloc[0]["Palabra"] if not df_freq.empty else "—")
 m4.metric("Apariciones", int(df_freq.iloc[0]["Frecuencia"]) if not df_freq.empty else 0)
 
 st.write("")
 
-with st.spinner("Creando imagen..."):
+with st.spinner("Generando representación visual..."):
     fig_wc = generar_wordcloud(texto_limpio, paleta_sel, max_words, fondo_color, FORMAS[forma_sel], ancho=1000, alto=520)
 
 st.markdown('<div class="wc-container">', unsafe_allow_html=True)
@@ -342,13 +350,19 @@ st.pyplot(fig_wc, use_container_width=True)
 st.markdown('</div>', unsafe_allow_html=True)
 
 img_bytes = fig_a_bytes(fig_wc)
-st.download_button("Descargar imagen (PNG)", data=img_bytes, file_name="nube_palabras.png", mime="image/png", use_container_width=True)
+st.download_button(
+    "Descargar nube en alta resolución (PNG)",
+    data=img_bytes,
+    file_name="nube_de_palabras_krov.png",
+    mime="image/png",
+    use_container_width=True
+)
 
 st.divider()
 
 col_freq, col_tabla = st.columns([3, 2], gap="large")
 with col_freq:
-    st.markdown("### Las 20 palabras más repetidas")
+    st.markdown("### Términos de mayor frecuencia")
     top20 = df_freq.head(20)
     max_freq = top20["Frecuencia"].max()
 
@@ -367,9 +381,15 @@ with col_freq:
         )
 
 with col_tabla:
-    st.markdown("### Tabla detallada")
+    st.markdown("### Tabla detallada de frecuencias")
     st.dataframe(df_freq.head(30), use_container_width=True, height=420)
     csv_bytes = df_freq.to_csv(index=False).encode("utf-8")
-    st.download_button("Exportar datos (CSV)", data=csv_bytes, file_name="frecuencias.csv", mime="text/csv", use_container_width=True)
+    st.download_button(
+        "Exportar frecuencias (CSV)",
+        data=csv_bytes,
+        file_name="frecuencias_palabras.csv",
+        mime="text/csv",
+        use_container_width=True
+    )
 
 plt.close("all")
